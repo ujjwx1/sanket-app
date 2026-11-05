@@ -84,3 +84,6 @@
 @media(min-width:901px){main.compact-header{position:relative}main.compact-header .view-switcher{position:absolute;top:38px;right:40px;margin:0}main.compact-header .field-header,main.compact-header .manager-header{padding-right:300px;min-height:68px}}
 
 @media(min-width:901px){main.compact-header .page-header{padding-right:300px;min-height:68px}}
+
+.issue-row .report-status,.detail-heading .report-status{display:inline-flex;align-items:center;gap:7px;flex:none;border:1px solid transparent;border-radius:8px;padding:6px 10px;font-size:14px;line-height:1.25;font-weight:700;text-transform:none;white-space:nowrap}.report-status::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}.issue-row .report-status.new,.detail-heading .report-status.new{background:#fff1dc;border-color:#eed5ac;color:#7a4700}.issue-row .report-status.reviewed,.detail-heading .report-status.reviewed{background:#e5f2e7;border-color:#c8dfcc;color:#235f3d}
+.issue-row .report-status,.detail-heading .report-status{height:auto;min-height:32px;font-size:15px;padding:6px 12px}

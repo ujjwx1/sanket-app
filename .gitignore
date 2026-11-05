@@ -29,7 +29,3 @@
 !/react-ui/src/components/ui/
 /react-ui/src/components/ui/*
 !/react-ui/src/components/ui/*.jsx
-!/react-ui/public/
-/react-ui/public/*
-!/react-ui/public/favicon.svg
-!/react-ui/public/icons.svg

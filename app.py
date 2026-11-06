@@ -78,6 +78,8 @@ def transcribe(audio, language):
         raise ValueError('Prisma is not configured. Add GNANI_API_KEY or use text reporting.')
     boundary = '----report' + uuid.uuid4().hex
     body = (f'--{boundary}\r\nContent-Disposition: form-data; name="language_code"\r\n\r\n{language}\r\n--{boundary}\r\nContent-Disposition: form-data; name="format"\r\n\r\nverbatim\r\n--{boundary}\r\nContent-Disposition: form-data; name="audio_file"; filename="recording.wav"\r\nContent-Type: audio/wav\r\n\r\n').encode() + audio + f'\r\n--{boundary}--\r\n'.encode()
+    if language == 'indic-auto':
+        body = body.replace(f'--{boundary}--\r\n'.encode(), (f'\r\n--{boundary}\r\nContent-Disposition: form-data; name="model"\r\n\r\nprisma-v3.0\r\n--{boundary}--\r\n').encode())
     req = Request('https://api.vachana.ai/stt/v3', data=body, headers={'X-API-Key-ID': key, 'User-Agent': 'Convey/1.0', 'Content-Type': 'multipart/form-data; boundary=' + boundary})
     with urlopen(req, timeout=45) as response:
         result = json.load(response)
@@ -154,7 +156,7 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(body, dict): raise ValueError('Invalid request.')
             if self.path == '/api/transcribe':
                 language = body.get('language', '')
-                if language not in ('en-IN', 'hi-IN', 'bn-IN', 'gu-IN', 'kn-IN', 'ml-IN', 'mr-IN', 'pa-IN', 'ta-IN', 'te-IN'): raise ValueError('Unsupported language.')
+                if language not in ('en-IN', 'hi-IN', 'bn-IN', 'gu-IN', 'kn-IN', 'ml-IN', 'mr-IN', 'pa-IN', 'ta-IN', 'te-IN', 'indic-auto'): raise ValueError('Unsupported language.')
                 audio = base64.b64decode(body.get('audio', ''), validate=True)
                 if not audio.startswith(b'RIFF') or len(audio) < 44: raise ValueError('Invalid WAV recording.')
                 return self.send_json(200, {'transcript': transcribe(audio, language)})

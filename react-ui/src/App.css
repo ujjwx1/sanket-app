@@ -87,3 +87,12 @@
 
 .issue-row .report-status,.detail-heading .report-status{display:inline-flex;align-items:center;gap:7px;flex:none;border:1px solid transparent;border-radius:8px;padding:6px 10px;font-size:14px;line-height:1.25;font-weight:700;text-transform:none;white-space:nowrap}.report-status::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}.issue-row .report-status.new,.detail-heading .report-status.new{background:#fff1dc;border-color:#eed5ac;color:#7a4700}.issue-row .report-status.reviewed,.detail-heading .report-status.reviewed{background:#e5f2e7;border-color:#c8dfcc;color:#235f3d}
 .issue-row .report-status,.detail-heading .report-status{height:auto;min-height:32px;font-size:15px;padding:6px 12px}
+
+
+
+.record-limit{font-size:14px;color:#405e53;text-align:center;margin-top:5px}
+
+.ui-language{display:flex;flex-direction:column;gap:4px;color:#475b52;font-size:13px;font-weight:600}.view-switcher .ui-language select{min-width:135px;min-height:44px;font-size:15px;background:#fffaf7}.view-switcher{gap:12px}@media(min-width:1200px){main.compact-header .field-header,main.compact-header .manager-header,main.compact-header .page-header{padding-right:460px}}@media(min-width:901px) and (max-width:1199px){main.compact-header .view-switcher{position:static;margin-bottom:18px}main.compact-header .field-header,main.compact-header .manager-header,main.compact-header .page-header{padding-right:0}}@media(max-width:680px){.view-switcher{justify-content:space-between;gap:8px}.view-control{min-width:0;flex:1}.ui-language{min-width:0}.view-switcher .ui-language select{min-width:100px;max-width:125px}}
+
+.view-switcher .ui-language{flex-direction:row;align-items:center;gap:12px;min-width:200px;font-size:inherit}.view-switcher .ui-language select{position:absolute;inset:0;width:100%;height:100%;min-width:0;max-width:none;opacity:0}.view-copy strong{max-width:100%;overflow:hidden;text-overflow:ellipsis}@media(min-width:1200px){main.compact-header .field-header,main.compact-header .manager-header,main.compact-header .page-header{padding-right:500px}}@media(max-width:680px){.view-switcher .view-control{flex:1;min-width:0;padding:8px;gap:7px}.view-switcher .ui-language{min-width:0}.view-avatar{width:36px;height:36px}.view-copy strong{font-size:13px}.view-chevron{width:15px;height:15px}}
+@media(max-width:680px){.view-switcher .view-copy strong{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.2}.view-switcher .view-control{height:auto}}

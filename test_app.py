@@ -17,6 +17,17 @@ class ReportTests(unittest.TestCase):
                 self.assertEqual(os.environ['GNANI_API_KEY'], 'local-key')
                 self.assertEqual(os.environ['LLM_MODEL'], 'existing-model')
 
+    def test_auto_transcription_requests_prisma_v3(self):
+        import io, json
+        from unittest.mock import patch
+        response = io.BytesIO(json.dumps({'success': True, 'transcript': 'test'}).encode())
+        with patch.dict('os.environ', {'GNANI_API_KEY': 'test'}), patch('app.urlopen', return_value=response) as mock_urlopen:
+            self.assertEqual(app.transcribe(b'RIFFaudio', 'indic-auto'), 'test')
+        request = mock_urlopen.call_args.args[0]
+        self.assertIn(b'indic-auto', request.data)
+        self.assertIn(b'prisma-v3.0', request.data)
+        self.assertIn(b'RIFFaudio', request.data)
+
     def test_translation_preserves_original_and_validates_output(self):
         import io, json
         from unittest.mock import patch

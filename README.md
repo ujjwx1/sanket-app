@@ -6,9 +6,7 @@
 
 **Voice to report. Across languages.**
 
-<a href="https://sanket-app.onrender.com/">
-  <img src="https://img.shields.io/badge/▶%20%20TRY%20SANKET-LIVE%20DEMO-087A48?style=for-the-badge&labelColor=F5AA00" alt="Try Sanket — live demo" height="52">
-</a>
+## [Try Sanket →](https://sanket-app.onrender.com/)
 
 ![Voice-first](https://img.shields.io/badge/VOICE-FIRST-165B3A?style=for-the-badge)
 ![Multilingual](https://img.shields.io/badge/MULTILINGUAL-ECA916?style=for-the-badge&labelColor=165B3A)

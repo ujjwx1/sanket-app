@@ -6,6 +6,8 @@
 
 **Voice to report. Across languages.**
 
+### [Try Sanket →](https://sanket-app.onrender.com/)
+
 ![Voice-first](https://img.shields.io/badge/VOICE-FIRST-165B3A?style=for-the-badge)
 ![Multilingual](https://img.shields.io/badge/MULTILINGUAL-ECA916?style=for-the-badge&labelColor=165B3A)
 ![Human-reviewed](https://img.shields.io/badge/YOU_REVIEW_IT-165B3A?style=for-the-badge)

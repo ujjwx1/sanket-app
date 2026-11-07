@@ -6,6 +6,60 @@ import app
 
 
 class ReportTests(unittest.TestCase):
+    def test_cors_allows_only_configured_frontend(self):
+        import http.client, threading
+        from unittest.mock import patch
+        server = app.ThreadingHTTPServer(('127.0.0.1', 0), app.Handler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with patch.dict('os.environ', {'FRONTEND_ORIGIN': 'https://sanket.example'}):
+                for origin, expected in [('https://sanket.example', 204), ('https://other.example', 403)]:
+                    conn = http.client.HTTPConnection('127.0.0.1', server.server_port)
+                    conn.request('OPTIONS', '/api/issues', headers={'Origin': origin})
+                    response = conn.getresponse()
+                    self.assertEqual(response.status, expected)
+                    self.assertEqual(response.getheader('Access-Control-Allow-Origin'), origin if expected == 204 else None)
+                    response.read()
+                    conn.close()
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
+
+    def test_daily_usage_limit_persists_in_database(self):
+        with tempfile.TemporaryDirectory() as folder:
+            db = Path(folder) / 'reports.db'
+            app.init_db(db)
+            self.assertTrue(app.allow_daily(db, 'ai', 2))
+            self.assertTrue(app.allow_daily(db, 'ai', 2))
+            self.assertFalse(app.allow_daily(db, 'ai', 2))
+            self.assertTrue(app.allow_daily(db, 'reports', 2))
+
+    def test_audio_duration_limit(self):
+        import io, wave
+        def recording(seconds):
+            out = io.BytesIO()
+            with wave.open(out, 'wb') as wav:
+                wav.setparams((1, 2, 8000, 0, 'NONE', 'not compressed'))
+                wav.writeframes(b'\0\0' * (8000 * seconds))
+            return out.getvalue()
+        app.validate_audio(recording(30))
+        with self.assertRaisesRegex(ValueError, '30 seconds'):
+            app.validate_audio(recording(31))
+        with self.assertRaisesRegex(ValueError, 'Invalid WAV'):
+            app.validate_audio(b'bad')
+
+    def test_request_limit(self):
+        from unittest.mock import patch
+        app.request_times.clear()
+        with patch('app.time.monotonic', return_value=100):
+            self.assertTrue(all(app.allow_request() for _ in range(30)))
+            self.assertFalse(app.allow_request())
+        with patch('app.time.monotonic', return_value=161):
+            self.assertTrue(app.allow_request())
+        app.request_times.clear()
+
     def test_speech_retries_temporary_connection_failure(self):
         import io, wave
         from urllib.error import URLError

@@ -100,3 +100,9 @@
 @media(max-width:680px){.view-switcher .view-copy strong{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.2}.view-switcher .view-control{height:auto}}
 
 @media(max-width:680px){.manager-issue{flex-wrap:wrap}.manager-issue>span:nth-child(2){flex:1 1 65%}}
+/* Give translated scripts enough vertical and horizontal space. */
+html:not([lang="en"]) .field-header h1,html:not([lang="en"]) .page-header h1,html:not([lang="en"]) .manager-header h1,html:not([lang="en"]) .review-heading h1{line-height:1.4;overflow-wrap:anywhere}
+html:not([lang="en"]) .field-header p,html:not([lang="en"]) .page-header p,html:not([lang="en"]) .manager-header p,html:not([lang="en"]) .review-heading p,html:not([lang="en"]) .view-copy strong{line-height:1.5;overflow-wrap:anywhere}
+@media(min-width:1200px){main.compact-header .view-switcher{max-width:48%}main.compact-header .view-control{min-width:0}main.compact-header .field-header,main.compact-header .manager-header,main.compact-header .page-header{padding-right:51%}}
+@media(min-width:1200px){html:not([lang="en"]) main.compact-header .view-switcher{position:static;max-width:none;margin-bottom:18px}html:not([lang="en"]) main.compact-header .field-header,html:not([lang="en"]) main.compact-header .manager-header,html:not([lang="en"]) main.compact-header .page-header{padding-right:0}html:not([lang="en"]) .view-copy strong{white-space:normal;overflow:visible;text-overflow:clip}}
+@media(max-width:680px){html:not([lang="en"]) .view-switcher{flex-wrap:wrap}html:not([lang="en"]) .view-switcher .view-control{flex:1 1 100%}html:not([lang="en"]) .view-switcher .view-copy strong{overflow-wrap:normal}}

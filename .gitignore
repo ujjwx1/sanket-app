@@ -1,6 +1,12 @@
 # Keep private files out by default; explicitly allow application files only.
 /*
 !/.gitignore
+!/README.md
+!/readme-assets/
+/readme-assets/*
+!/readme-assets/sanket-logo.png
+!/readme-assets/report-screen.png
+!/readme-assets/report-mobile.png
 !/app.py
 !/app.js
 !/index.html

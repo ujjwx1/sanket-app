@@ -3,6 +3,10 @@ import json
 import os
 import sqlite3
 import uuid
+import io
+import wave
+import textwrap
+import time
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -19,7 +23,7 @@ def load_env(path):
     if path.is_file():
         for line in path.read_text(encoding='utf-8-sig').splitlines():
             key, separator, value = line.partition('=')
-            if separator and key.strip() in ('GNANI_API_KEY', 'LLM_BASE_URL', 'LLM_API_KEY', 'LLM_MODEL'):
+            if separator and key.strip() in ('GNANI_API_KEY', 'GNANI_TTS_API_KEY', 'LLM_BASE_URL', 'LLM_API_KEY', 'LLM_MODEL'):
                 os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
@@ -106,6 +110,51 @@ def extract(transcript):
 TRANSLATION_LANGUAGES = {'en': 'English', 'hi': 'Hindi', 'bn': 'Bengali', 'gu': 'Gujarati', 'kn': 'Kannada', 'ml': 'Malayalam', 'mr': 'Marathi', 'pa': 'Punjabi', 'ta': 'Tamil', 'te': 'Telugu'}
 
 
+def speak_translation(text, language):
+    if language not in TRANSLATION_LANGUAGES:
+        raise ValueError('Choose a supported speech language.')
+    if not isinstance(text, str) or not text.strip() or len(text) > 20000:
+        raise ValueError('The translated transcript must contain at most 20,000 characters.')
+    key = os.environ.get('GNANI_TTS_API_KEY')
+    if not key:
+        raise ValueError('Text-to-speech is not configured. Add GNANI_TTS_API_KEY to .env and restart the backend.')
+    frames = []
+    for part in textwrap.wrap(text, width=400, break_long_words=True, replace_whitespace=True):
+        payload = {'text': part, 'voice': 'Lakshmi', 'model': 'timbre-v3.0', 'language': language + '-IN', 'speed': 1.0,
+                   'audio_config': {'sample_rate': 24000, 'num_channels': 1, 'sample_width': 2, 'encoding': 'linear_pcm', 'container': 'wav'}}
+        req = Request('https://api.vachana.ai/api/v1/tts/inference', data=json.dumps(payload).encode(), headers={'X-API-Key-ID': key, 'Content-Type': 'application/json', 'User-Agent': 'Convey/1.0'})
+        for attempt in range(3):
+            try:
+                with urlopen(req, timeout=90) as response:
+                    if 'json' in response.headers.get('Content-Type', '').lower():
+                        raise ValueError('Gnani did not return audio. Check text-to-speech access and try again.')
+                    audio = response.read()
+                break
+            except HTTPError as exc:
+                if exc.code not in (429, 500, 502, 503, 504) or attempt == 2:
+                    raise
+            except (URLError, TimeoutError, OSError):
+                if attempt == 2:
+                    raise
+            time.sleep(2 ** attempt)
+        if audio.startswith(b'RIFF'):
+            try:
+                with wave.open(io.BytesIO(audio), 'rb') as source:
+                    if (source.getnchannels(), source.getsampwidth(), source.getframerate()) != (1, 2, 24000):
+                        raise ValueError('Gnani returned an unsupported audio format.')
+                    audio = source.readframes(source.getnframes())
+            except wave.Error as exc:
+                raise ValueError('Gnani returned invalid audio.') from exc
+        if not audio or len(audio) % 2:
+            raise ValueError('Gnani returned invalid audio.')
+        frames.append(audio)
+    output = io.BytesIO()
+    with wave.open(output, 'wb') as wav:
+        wav.setparams((1, 2, 24000, 0, 'NONE', 'not compressed'))
+        wav.writeframes(b''.join(frames))
+    return output.getvalue()
+
+
 def translate_issue(data, language, transcript=None):
     if language not in TRANSLATION_LANGUAGES:
         raise ValueError('Choose a supported translation language.')
@@ -164,6 +213,9 @@ class Handler(BaseHTTPRequestHandler):
                 transcript = body.get('transcript', '')
                 if not isinstance(transcript, str) or not transcript.strip() or len(transcript) > 10000: raise ValueError('Enter a report under 10,000 characters.')
                 return self.send_json(200, {'draft': extract(transcript)})
+            if self.path == '/api/speak-translation':
+                audio = speak_translation(body.get('text'), body.get('language'))
+                return self.send_json(200, {'audio': base64.b64encode(audio).decode('ascii')})
             if self.path == '/api/issues':
                 audio = base64.b64decode(body['audio'], validate=True) if body.get('audio') else None
                 if audio and (not audio.startswith(b'RIFF') or len(audio) < 44): raise ValueError('Invalid WAV recording.')
@@ -180,8 +232,13 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
             self.send_json(400, {'error': str(exc)})
         except HTTPError as exc:
+            if self.path == '/api/speak-translation':
+                return self.send_json(502, {'error': f'Gnani audio returned HTTP {exc.code}. Please try again.'})
             self.send_json(502, {'error': f'The AI service returned HTTP {exc.code}. Your report is still on this page; retry or continue manually.'})
-        except (URLError, TimeoutError, OSError):
+        except (URLError, TimeoutError, OSError) as exc:
+            if self.path == '/api/speak-translation':
+                reason = exc.reason if isinstance(exc, URLError) else exc
+                return self.send_json(502, {'error': f'Could not connect to Gnani audio ({type(reason).__name__}). Please try again.'})
             self.send_json(502, {'error': 'The AI service could not be reached. Your report is still on this page; retry or continue manually.'})
 
 

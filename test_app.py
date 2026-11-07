@@ -6,6 +6,56 @@ import app
 
 
 class ReportTests(unittest.TestCase):
+    def test_speech_retries_temporary_connection_failure(self):
+        import io, wave
+        from urllib.error import URLError
+        from unittest.mock import patch
+
+        class Response(io.BytesIO):
+            headers = {'Content-Type': 'audio/wav'}
+
+        output = io.BytesIO()
+        with wave.open(output, 'wb') as wav:
+            wav.setparams((1, 2, 24000, 0, 'NONE', 'not compressed'))
+            wav.writeframes(b'\x00\x00' * 100)
+        with patch.dict('os.environ', {'GNANI_TTS_API_KEY': 'test'}), patch('app.time.sleep'), patch('app.urlopen', side_effect=[URLError('temporary'), Response(output.getvalue())]) as request:
+            result = app.speak_translation('Hello', 'en')
+        self.assertEqual(request.call_count, 2)
+        with wave.open(io.BytesIO(result), 'rb') as wav:
+            self.assertEqual(wav.getnframes(), 100)
+
+    def test_speech_uses_separate_key_and_combines_audio(self):
+        import io, json, wave
+        from unittest.mock import patch
+
+        class Response(io.BytesIO):
+            headers = {'Content-Type': 'audio/wav'}
+
+        def reply(request, timeout):
+            self.assertEqual(request.get_header('X-api-key-id'), 'tts-key')
+            payload = json.loads(request.data)
+            self.assertEqual(payload['language'], 'pa-IN')
+            self.assertLessEqual(len(payload['text']), 400)
+            output = io.BytesIO()
+            with wave.open(output, 'wb') as wav:
+                wav.setparams((1, 2, 24000, 0, 'NONE', 'not compressed'))
+                wav.writeframes(b'\x00\x00' * 100)
+            return Response(output.getvalue())
+
+        with patch.dict('os.environ', {'GNANI_TTS_API_KEY': 'tts-key'}), patch('app.urlopen', side_effect=reply) as mock:
+            audio = app.speak_translation('word ' * 100, 'pa')
+        self.assertEqual(mock.call_count, 2)
+        with wave.open(io.BytesIO(audio), 'rb') as wav:
+            self.assertEqual(wav.getnframes(), 200)
+
+    def test_speech_requires_key_and_supported_language(self):
+        from unittest.mock import patch
+        with patch.dict('os.environ', {}, clear=True):
+            with self.assertRaisesRegex(ValueError, 'GNANI_TTS_API_KEY'):
+                app.speak_translation('hello', 'en')
+            with self.assertRaisesRegex(ValueError, 'supported speech language'):
+                app.speak_translation('hello', 'invalid')
+
     def test_loads_local_key_without_overriding_environment(self):
         import os
         from unittest.mock import patch

@@ -254,6 +254,22 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         route = urlsplit(self.path).path
         if not route.startswith('/api/') and FRONTEND.is_dir():
+            if route == '/sanket-icon.svg':
+                try:
+                    with database(DB) as con:
+                        row = con.execute(sql(DB, 'SELECT content FROM sanket_brand_assets WHERE name = ?'), ('sanket-icon.png',)).fetchone()
+                    if not row:
+                        return self.send_json(404, {'error': 'Icon not found.'})
+                    icon = base64.b64encode(bytes(row[0])).decode('ascii')
+                    data = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="155 155 970 970"><image width="1280" height="1280" href="data:image/png;base64,{icon}"/></svg>'.encode()
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'image/svg+xml')
+                    self.send_header('Content-Length', str(len(data)))
+                    self.end_headers()
+                    self.wfile.write(data)
+                    return
+                except Exception:
+                    return self.send_json(503, {'error': 'Icon temporarily unavailable.'})
             if route in ('/website-logo.png', '/sanket-dark-logo.png', '/sanket-icon.png'):
                 path = FRONTEND / route.lstrip('/')
                 if not path.is_file() and isinstance(DB, str) and DB.startswith(('postgresql://', 'postgres://')):

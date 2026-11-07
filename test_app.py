@@ -29,6 +29,13 @@ class ReportTests(unittest.TestCase):
                         self.assertEqual(response.status, 200)
                         self.assertEqual(response.read(), name.encode())
                         conn.close()
+                    conn = http.client.HTTPConnection('127.0.0.1', server.server_port)
+                    conn.request('GET', '/sanket-icon.svg?v=2')
+                    response = conn.getresponse()
+                    self.assertEqual(response.status, 200)
+                    self.assertEqual(response.getheader('Content-Type'), 'image/svg+xml')
+                    self.assertIn(b'viewBox="155 155 970 970"', response.read())
+                    conn.close()
                 finally:
                     server.shutdown()
                     server.server_close()

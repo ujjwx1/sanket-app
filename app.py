@@ -244,5 +244,7 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     init_db(DB)
-    print('Open http://127.0.0.1:8000')
-    ThreadingHTTPServer(('127.0.0.1', 8000), Handler).serve_forever()
+    host = '0.0.0.0' if os.environ.get('RENDER') == 'true' else '127.0.0.1'
+    port = int(os.environ.get('PORT', '8000')) if host == '0.0.0.0' else 8000
+    print(f'Server listening on {host}:{port}')
+    ThreadingHTTPServer((host, port), Handler).serve_forever()

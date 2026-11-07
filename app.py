@@ -8,6 +8,8 @@ import wave
 import textwrap
 import time
 import threading
+import mimetypes
+from urllib.parse import urlsplit
 from collections import deque
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -17,6 +19,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).parent
+FRONTEND = ROOT / 'react-ui' / 'dist'
 DB = ROOT / 'reports.db'
 FIELDS = ('title', 'summary', 'description', 'category', 'location', 'asset', 'impact', 'safety_concern', 'suggested_action', 'missing_information', 'severity')
 
@@ -249,6 +252,24 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status); self.send_header('Content-Type', 'application/json; charset=utf-8'); self.send_header('Content-Length', str(len(data))); self.end_headers(); self.wfile.write(data)
 
     def do_GET(self):
+        route = urlsplit(self.path).path
+        if not route.startswith('/api/') and FRONTEND.is_dir():
+            # Only serve built frontend files and the explicitly public README logo.
+            if route in ('/website-logo.png', '/sanket-dark-logo.png', '/sanket-icon.png'):
+                path = ROOT / 'readme-assets' / 'sanket-logo.png'
+            else:
+                path = (FRONTEND / ('index.html' if route == '/' else route.lstrip('/'))).resolve()
+                if not path.is_relative_to(FRONTEND.resolve()):
+                    return self.send_json(404, {'error': 'Not found.'})
+            if path.is_file():
+                data = path.read_bytes()
+                self.send_response(200)
+                self.send_header('Content-Type', mimetypes.guess_type(path.name)[0] or 'application/octet-stream')
+                self.send_header('Content-Length', str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+                return
+            return self.send_json(404, {'error': 'Not found.'})
         if self.path in ('/', '/index.html', '/app.js', '/style.css'):
             path = ROOT / ('index.html' if self.path == '/' else self.path[1:])
             data = path.read_bytes(); self.send_response(200); self.send_header('Content-Type', {'html': 'text/html', 'js': 'text/javascript', 'css': 'text/css'}[path.suffix[1:]] + '; charset=utf-8'); self.end_headers(); self.wfile.write(data); return

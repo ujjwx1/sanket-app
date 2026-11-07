@@ -6,6 +6,33 @@ import app
 
 
 class ReportTests(unittest.TestCase):
+    def test_serves_built_frontend_without_exposing_other_files(self):
+        import http.client, threading
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            frontend = root / 'dist'
+            frontend.mkdir()
+            (frontend / 'index.html').write_text('new interface', encoding='utf8')
+            (root / 'secret.txt').write_text('private', encoding='utf8')
+            server = app.ThreadingHTTPServer(('127.0.0.1', 0), app.Handler)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            with patch.object(app, 'FRONTEND', frontend):
+                thread.start()
+                try:
+                    for path, status in [('/', 200), ('/../secret.txt', 404)]:
+                        conn = http.client.HTTPConnection('127.0.0.1', server.server_port)
+                        conn.request('GET', path)
+                        response = conn.getresponse()
+                        self.assertEqual(response.status, status)
+                        content = response.read()
+                        if path == '/': self.assertEqual(content, b'new interface')
+                        conn.close()
+                finally:
+                    server.shutdown()
+                    server.server_close()
+                    thread.join()
+
     def test_cors_allows_only_configured_frontend(self):
         import http.client, threading
         from unittest.mock import patch

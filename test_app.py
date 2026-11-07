@@ -6,6 +6,34 @@ import app
 
 
 class ReportTests(unittest.TestCase):
+    def test_deployed_logo_routes_use_matching_database_assets(self):
+        import contextlib, http.client, threading
+        from unittest.mock import patch
+        class Connection:
+            def execute(self, query, params):
+                class Result:
+                    def fetchone(self): return (params[0].encode(),)
+                return Result()
+        @contextlib.contextmanager
+        def fake_database(_): yield Connection()
+        with tempfile.TemporaryDirectory() as folder:
+            server = app.ThreadingHTTPServer(('127.0.0.1', 0), app.Handler)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            with patch.object(app, 'FRONTEND', Path(folder)), patch.object(app, 'DB', 'postgresql://example'), patch.object(app, 'database', fake_database):
+                thread.start()
+                try:
+                    for name in ('website-logo.png', 'sanket-dark-logo.png', 'sanket-icon.png'):
+                        conn = http.client.HTTPConnection('127.0.0.1', server.server_port)
+                        conn.request('GET', '/' + name)
+                        response = conn.getresponse()
+                        self.assertEqual(response.status, 200)
+                        self.assertEqual(response.read(), name.encode())
+                        conn.close()
+                finally:
+                    server.shutdown()
+                    server.server_close()
+                    thread.join()
+
     def test_serves_built_frontend_without_exposing_other_files(self):
         import http.client, threading
         from unittest.mock import patch

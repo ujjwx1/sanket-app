@@ -254,13 +254,26 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         route = urlsplit(self.path).path
         if not route.startswith('/api/') and FRONTEND.is_dir():
-            # Only serve built frontend files and the explicitly public README logo.
             if route in ('/website-logo.png', '/sanket-dark-logo.png', '/sanket-icon.png'):
-                path = ROOT / 'readme-assets' / 'sanket-logo.png'
+                path = FRONTEND / route.lstrip('/')
+                if not path.is_file() and isinstance(DB, str) and DB.startswith(('postgresql://', 'postgres://')):
+                    try:
+                        with database(DB) as con:
+                            row = con.execute(sql(DB, 'SELECT content FROM sanket_brand_assets WHERE name = ?'), (route.lstrip('/'),)).fetchone()
+                        if row:
+                            data = bytes(row[0])
+                            self.send_response(200)
+                            self.send_header('Content-Type', 'image/png')
+                            self.send_header('Content-Length', str(len(data)))
+                            self.end_headers()
+                            self.wfile.write(data)
+                            return
+                    except Exception:
+                        return self.send_json(503, {'error': 'Logo temporarily unavailable.'})
             else:
                 path = (FRONTEND / ('index.html' if route == '/' else route.lstrip('/'))).resolve()
-                if not path.is_relative_to(FRONTEND.resolve()):
-                    return self.send_json(404, {'error': 'Not found.'})
+            if not path.resolve().is_relative_to(FRONTEND.resolve()):
+                return self.send_json(404, {'error': 'Not found.'})
             if path.is_file():
                 data = path.read_bytes()
                 self.send_response(200)

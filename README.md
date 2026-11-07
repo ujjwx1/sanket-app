@@ -4,8 +4,6 @@
 
 # Speak an issue in any language. Your team reads or hears it in their language.
 
-**Voice to report. Across languages.**
-
 ## [Try Sanket →](https://sanket-app.onrender.com/)
 
 ![Voice-first](https://img.shields.io/badge/VOICE-FIRST-165B3A?style=for-the-badge)

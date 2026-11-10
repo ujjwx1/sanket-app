@@ -24,7 +24,7 @@
 
 ## See it in action
 
-[![Watch the Sanket demo](readme-assets/report-screen.png)](https://github.com/ujjwx1/sanket-app/blob/main/readme-assets/sanket_demo_long_v6_phone_tamil.mp4)
+![Sanket demo](readme-assets/sanket-demo.gif)
 
 **[Watch the demo](https://github.com/ujjwx1/sanket-app/blob/main/readme-assets/sanket_demo_long_v6_phone_tamil.mp4)**
 

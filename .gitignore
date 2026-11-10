@@ -5,6 +5,7 @@
 !/readme-assets/
 /readme-assets/*
 !/readme-assets/sanket-logo.png
+!/readme-assets/sanket-demo.gif
 !/readme-assets/report-screen.png
 !/readme-assets/report-mobile.png
 !/app.py

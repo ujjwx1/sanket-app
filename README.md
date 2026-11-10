@@ -24,6 +24,8 @@
 
 ## See it in action
 
+![Sanket demo](sanket_demo_long_v6_phone_tamil.mp4)
+
 ![Sanket report screen on desktop](readme-assets/report-screen.png)
 
 <div align="center">
